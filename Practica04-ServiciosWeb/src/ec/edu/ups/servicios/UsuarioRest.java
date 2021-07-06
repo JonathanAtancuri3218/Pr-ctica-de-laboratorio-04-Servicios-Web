@@ -1,5 +1,7 @@
 package ec.edu.ups.servicios;
 
+import java.util.List;
+
 import javax.ejb.EJB;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
@@ -24,84 +26,115 @@ public class UsuarioRest {
     private UsuarioFacade usuarioFacade;
     private Jsonb jsonb;
 
-    /*
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getUsuario() {
-        return "Hola Mundo desde el path Productos";
-    }
-     */
+   
+    
+    
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response createUsuario(String jsonUsuario) {
-        System.out.println("entrando al metodo de crear usuario.............................. " );
-        jsonb = JsonbBuilder.create();
-        System.out.println("Usuario en registro " + jsonUsuario);
-
-        try {
-            Usuario newUsuaio = jsonb.fromJson(jsonUsuario, Usuario.class);
-            newUsuaio.setCambioPassword(true);
-            usuarioFacade.create(newUsuaio);
-
-            return Response.ok().entity(newUsuaio)
-                    .header("Access-Control-Allow-Origin", "*")
-                    .header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT")
-                    .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
-                    .header("Access-Control-Allow-Credentials", "true")
-                    .allow("OPTIONS").build();
-
-        } catch (Exception e) {
-
-            return Response.status(500).entity("Usuario no creado: " + e)
-                    .header("Access-Control-Allow-Origin", "*")
-                    .header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT")
-                    .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
-                    .header("Access-Control-Allow-Credentials", "true")
-                    .allow("OPTIONS").build();
-
-        }
-    }
-
-    @PUT
-    @Path("/{usuarioID}")
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/loginCliente")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response editDireccion(@PathParam("usuarioID") String usuarioID, String jsonLocalidad) {
-        //System.out.println("usuario cedula "+id);
-        if (usuarioID != null) {
-            jsonb = JsonbBuilder.create();
-            Usuario usuario = usuarioFacade.find(usuarioID);
-            if (usuario != null) {
-                try {
-                    usuarioFacade.edit(jsonb.fromJson(jsonLocalidad, Usuario.class));
-                    return Response.ok().entity("Usuario actualizado").header("Access-Control-Allow-Origin", "*").build();
-                } catch (Exception e) {
-                    return Response.status(500).entity("Error al actualizar: " + e)
-                            .header("Access-Control-Allow-Origin", "*")
-                            .header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT")
-                            .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
-                            .header("Access-Control-Allow-Credentials", "true")
-                            .allow("OPTIONS").build();
-                }
-            } else {
-                return Response.status(Response.Status.NOT_FOUND).entity("Usuario no encontrado")
-                        .header("Access-Control-Allow-Origin", "*")
-                        .header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT")
-                        .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
-                        .header("Access-Control-Allow-Credentials", "true")
-                        .allow("OPTIONS").build();
-            }
-
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).entity("Datos insuficientes")
-                    .header("Access-Control-Allow-Origin", "*")
-                    .header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT")
-                    .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
-                    .header("Access-Control-Allow-Credentials", "true")
-                    .allow("OPTIONS").build();
-        }
+    public Response loginCliente(@FormParam("correo") String correo, @FormParam("password") String password) {	
+    	
+    	System.out.println("Correo: "+correo+ " password: "+password);
+    	
+    	//Persona persona = ejbPersona.inicioSesion(usuario, password);
+    			
+    	Usuario persona = usuarioFacade.finByEmailAndPass(correo, password);
+    	
+    	if(persona==null) {
+    		return Response.ok("Persona no encotrada").build();
+    	}else {
+    		
+    		if (persona.getRol().equals("cliente") && persona.isActivo() == true) {
+    			return Response.ok("Bienvenido : "+persona.getNombre()+"!!").build();
+			}else {
+				
+				return Response.ok("Cliente no encontrado").build();
+			}
+    	}    	
     }
+    
+    @POST
+    @Path("/crearCuenta")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response crearCuenta(@FormParam("correo") String correo, 
+    							@FormParam("password") String password, 
+    							@FormParam("cedula") String cedula, 
+    							@FormParam("nombre") String nombre, 
+    							@FormParam("apellido") String apellido) {		
+    	
+    	
+    	 Usuario per = usuarioFacade.find(cedula);
+    	
+    	if (per != null) {
+    		
+        	try {
+        		//persona = new Persona(nombre, apellido, cedula, direccion, telefono, correo, password, 'C', "Activo");
+        		
+        		//per = new Usuario();        		
+        		per.setCorreo(correo);
+        		per.setPassword(password);
+        		per.setNombre(nombre);
+        		per.setApellido(apellido);
+        		//per.setActivo(true);
+        		usuarioFacade.edit(per);
+        		return Response.ok("Usuario Creado, gracias por unise a nosotros: "+per.getNombre()+" "+per.getApellido()).build();
+        	}catch (Exception e) {
+    			return Response.ok("Usuario no creado").build();
+    		}
+		}else {
+			return Response.ok("El usuario han no a sido registrado en la base de datos").build();
+			
+		}
+    	
+    	
+    	
+    }
+    
+    @POST
+    @Path("/modificarCuenta")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response modificarCuenta(@FormParam("correo") String correo, @FormParam("password") String password, @FormParam("cedula") String cedula, @FormParam("nombre") String nombre, @FormParam("apellido") String apellido, @FormParam("direccion") String direccion,@FormParam("telefono") String telefono){
+    	//Usuario  persona=ejbPersona.buscarPorCedula(cedula);
+    	Usuario persona = (Usuario) usuarioFacade.find(cedula);
+    	if(persona==null) {
+    		return Response.ok("Cliente no encontrada!").build();
+    	}else {
+    		persona.setCorreo(correo);
+    		persona.setPassword(password);
+       		persona.setNombre(nombre);
+    		persona.setApellido(apellido);    		
+    		//persona.setDireccion(direccion);
+    		//persona.setTelefono(telefono);
+    		usuarioFacade.edit(persona);
+    		return Response.ok("Sus datos han sido Modificados!").build();
+    	}
+    	
+    }
+    
+    @POST
+    @Path("/anularCuenta")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response eliminarCuenta(@FormParam("cedula") String cedula) {
+    	//Persona persona = ejbPersona.buscarPorCedula(cedula);
+    	Usuario persona = (Usuario) usuarioFacade.find(cedula);
+    	if(persona==null) {
+    		return Response.ok("Cliente no encontrado!").build();
+    	}else {
+    		persona.setActivo(false);
+    		usuarioFacade.edit(persona);
+    		return Response.ok("Usuario correctamente eliminado de forma lógica").build();
+    	}
+    	
+    }
+    
+    
+    
+
+   
 
     @DELETE
     @Path("/{usuarioID}")

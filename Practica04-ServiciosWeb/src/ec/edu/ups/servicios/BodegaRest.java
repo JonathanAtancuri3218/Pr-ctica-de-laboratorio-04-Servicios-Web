@@ -92,4 +92,32 @@ public class BodegaRest {
               
             }
          }
+    
+    @GET
+    @Path("/list")
+    @Produces(MediaType.APPLICATION_JSON)
+    
+    //@Produces(MediaType.TEXT_PLAIN)
+    public Response getBodegas(){
+        try{
+            Jsonb jsonb = JsonbBuilder.create();
+            List<Bodega> bodegaList = bodegaFacade.findAll();
+
+            //bodegaList = Bodega.serializeBodegas(bodegaList);
+            //bodegaList = jsonb.toJson();
+            //bodegaList = Bodega
+            bodegaList.forEach(System.out::println);
+            
+            
+            //bodegaList = jsonb.fromJson(jsonb, bodegaList.class);
+
+            return Response.ok(jsonb.toJson(bodegaList))
+                    .header("Access-Control-Allow-Origins", "*")
+                    .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+                    .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+                    .build();
+        }catch (Exception e){
+            return Response.status(Response.Status.BAD_REQUEST).entity("Error al obtener las bodegas ->" + e.getMessage()).build();
+        }
+    }
      }
