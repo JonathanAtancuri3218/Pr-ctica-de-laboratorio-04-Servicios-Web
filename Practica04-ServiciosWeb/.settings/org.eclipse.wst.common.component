@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
-    <wb-module deploy-name="Practica04-ServiciosWeb">
-        <wb-resource deploy-path="/" source-path="/WebContent" tag="defaultRootSource"/>
-        <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
-        <property name="context-root" value="Practica04-ServiciosWeb"/>
-        <property name="java-output-path" value="/Practica04-ServiciosWeb/build/classes"/>
-    </wb-module>
-</project-modules>
